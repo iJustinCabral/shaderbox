@@ -18,6 +18,13 @@ Create water shader
 *Make particle move down from click point  
 *Made the grid update from top down instead of bottom up  
 
+### -= 01/22/2025 =-
+
+*Added water particle type  
+*Implemented water particle physics  
+*Added stone particle type  
+*Added temporary selector buttons  
+
 Implement water particle physics  
 Implement dirt particle phyiscs  
 Create water shader  
