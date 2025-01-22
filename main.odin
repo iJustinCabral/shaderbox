@@ -2,15 +2,19 @@ package shaderbox
 
 import    "core:fmt"
 import    "core:math"
+import    "core:math/rand"
 import rl "vendor:raylib"
 
 // Constants
 WINDOW_WIDTH  :: 360 * 3
 WINDOW_HEIGHT :: 240 * 3
-CELL_SIZE     :: 4 
+CELL_SIZE     :: 8 
 GRID_SIZE_X   :: WINDOW_WIDTH / CELL_SIZE
 GRID_SIZE_Y   :: WINDOW_HEIGHT / CELL_SIZE
 GRAVITY       :: -9.8
+ADD_RADIUS    :: 5
+MIN_PARTICLES :: 5
+MAX_PARTICLES :: 20
 
 // Type and  defintions
 Vector2i :: [2]int
@@ -32,7 +36,7 @@ ParticleType :: enum(u8) {
 }
 
 grid := [GRID_SIZE_X][GRID_SIZE_Y]Particle{}
-selected_type := ParticleType.Water
+selected_type := ParticleType.Empty
 
 main :: proc() {
     rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Shaderbox - Particle Playground")
@@ -111,34 +115,48 @@ update_sand :: proc(pos: Vector2i) {
 }
 
 update_water :: proc(pos: Vector2i) {
-      x, y := pos.x, pos.y
+    x, y := pos.x, pos.y
 
+    // Move water down
     if in_bounds(x, y + 1) && is_empty(x, y + 1){
-        // Move water down
         grid[x][y + 1] = grid[x][y]
 	grid[x][y].id = .Empty
 	return
-    } else if in_bounds(x - 1, y + 1) && is_empty(x - 1, y + 1) {
-        // Move water down-left
+    }
+
+    // Check horizontally only if can't move down
+    if in_bounds(x - 1, y) && is_empty(x - 1, y) {
+        if in_bounds(x + 1, y) && is_empty(x + 1, y) {
+            // If both left and right are empty, choose randomly
+            if rand.int31() % 2 == 0 {
+                grid[x - 1][y] = grid[x][y]
+            } else {
+                grid[x + 1][y] = grid[x][y]
+            }
+            grid[x][y].id = .Empty
+            return
+        } else {
+            grid[x - 1][y] = grid[x][y]
+            grid[x][y].id = .Empty
+            return
+        }
+    } else if in_bounds(x + 1, y) && is_empty(x + 1, y) {
+        grid[x + 1][y] = grid[x][y]
+        grid[x][y].id = .Empty
+        return
+    }
+    
+    // Move water down-left
+    if in_bounds(x - 1, y + 1) && is_empty(x - 1, y + 1) {
         grid[x - 1][y + 1] = grid[x][y]
         grid[x][y].id = .Empty
 	return
-    } else if in_bounds(x + 1, y + 1) && is_empty(x + 1, y + 1) {
-        // Move water down-right
+    }
+
+    // Move water down-right
+    if in_bounds(x + 1, y + 1) && is_empty(x + 1, y + 1) {
         grid[x + 1][y + 1] = grid[x][y]
         grid[x][y].id = .Empty
-	return
-    }
-    else if in_bounds(x - 1, y) && is_empty(x - 1, y) {
-	// Move water left
-	grid[x - 1][y] = grid[x][y]
-	grid[x][y].id = .Empty
-	return
-    }
-    else if in_bounds(x + 1, y) && is_empty(x + 1, y) {
-	// Move water right
-	grid[x + 1][y] = grid[x][y]
-	grid[x][y].id = .Empty
 	return
     }
 
@@ -155,6 +173,9 @@ update_stone :: proc(pos: Vector2i) {
 }
 
 add_particle :: proc(pos: Vector2i, type: ParticleType) {
+
+    // Single Particle at a time
+    /*
     if grid[pos.x][pos.y].id == .Empty {
 	#partial switch type {
 	case .Sand:
@@ -167,6 +188,35 @@ add_particle :: proc(pos: Vector2i, type: ParticleType) {
 	    grid[pos.x][pos.y].id = .Stone
 	    grid[pos.x][pos.y].color = rl.GRAY
 	}
+    } */
+    
+    // TODO: Add a selector for single or bunch of particles
+    // Circle radius of paticles
+    num_particles := rand.int_max(MAX_PARTICLES)
+
+    for _ in 0..<num_particles {
+        // Generate random angle and distance within the circle
+        angle := f32(rand.float64_range(0, 2*math.PI))
+        distance := f32(rand.float64_range(0, ADD_RADIUS))
+
+        // Convert polar coordinates to grid coordinates
+        dx := int(math.round(math.cos(angle) * distance))
+        dy := int(math.round(math.sin(angle) * distance))
+	
+	x,y := pos.x, pos.y 
+        particle_pos := Vector2i{x + dx, y + dy}
+        
+        if in_bounds(particle_pos.x, particle_pos.y) && grid[particle_pos.x][particle_pos.y].id == .Empty {
+            grid[particle_pos.x][particle_pos.y].id = type
+	    #partial switch type {
+            case .Sand:
+                grid[particle_pos.x][particle_pos.y].color = rl.YELLOW
+            case .Water:
+                grid[particle_pos.x][particle_pos.y].color = rl.BLUE
+            case .Stone:
+                grid[particle_pos.x][particle_pos.y].color = rl.GRAY
+            }
+        }
     }
 }
 
