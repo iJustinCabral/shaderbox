@@ -43,13 +43,14 @@ main :: proc() {
 	    mouse_pos := rl.GetMousePosition()
 	    grid_x := int(mouse_pos.x) / CELL_SIZE
 	    grid_y := int(mouse_pos.y) / CELL_SIZE
+
 	    if in_bound(grid_x, grid_y) {
 		add_particle({grid_x, grid_y})  
 	    }
 	}	
 
 	// Update
-	for y in 0..<GRID_SIZE_Y {
+	for y := GRID_SIZE_Y - 1; y >= 0; y -= 1 {
 	    for x in 0..<GRID_SIZE_X {
 		p_id := grid[x][y].id
 
@@ -67,7 +68,7 @@ main :: proc() {
 	rl.BeginDrawing()
 	defer rl.EndDrawing()
 
-	rl.ClearBackground(rl.GRAY)
+	rl.ClearBackground(rl.BLACK)
 	draw_particles()
 
     }
@@ -78,24 +79,28 @@ in_bound :: proc(x, y: int) -> bool {
     return x >= 0 && x < GRID_SIZE_X && y >= 0 && y < GRID_SIZE_Y
 }
 
+is_empty :: proc(x, y: int) -> bool {
+    return in_bound(x, y) && grid[x][y].id == .Empty
+}
+
 update_sand :: proc(pos: Vector2i) {
     x, y := pos.x, pos.y
 
-    if in_bound(x, y + 1) && grid[x][y + 1].id == .Empty {
+    if in_bound(x, y + 1) && is_empty(x, y + 1){
         // Move sand down
-        grid[x][y + 1].id = .Sand
-        grid[x][y + 1].color = rl.YELLOW
-        grid[x][y].id = .Empty
-    } else if in_bound(x - 1, y + 1) && grid[x - 1][y + 1].id == .Empty {
+        grid[x][y + 1] = grid[x][y]
+	grid[x][y].id = .Empty
+	return
+    } else if in_bound(x - 1, y + 1) && is_empty(x - 1, y + 1) {
         // Move sand down-left
-        grid[x - 1][y + 1].id = .Sand
-        grid[x - 1][y + 1].color = rl.YELLOW
+        grid[x - 1][y + 1] = grid[x][y]
         grid[x][y].id = .Empty
-    } else if in_bound(x + 1, y + 1) && grid[x + 1][y + 1].id == .Empty {
+	return
+    } else if in_bound(x + 1, y + 1) && is_empty(x + 1, y + 1) {
         // Move sand down-right
-        grid[x + 1][y + 1].id = .Sand
-        grid[x + 1][y + 1].color = rl.YELLOW
+        grid[x + 1][y + 1] = grid[x][y]
         grid[x][y].id = .Empty
+	return
     }
  
 }
@@ -112,18 +117,13 @@ add_particle :: proc(pos: Vector2i) {
 }
 
 draw_particles :: proc() {
-    for x in 0..<GRID_SIZE_X {
-        for y in 0..<GRID_SIZE_Y {
+    for y in 0..<GRID_SIZE_Y {
+        for x in 0..<GRID_SIZE_X {
             particle := &grid[x][y]
             // Only draw if the particle is not Empty
             if particle.id == .Sand {
-                // Draw the particle. Here, we're drawing a rectangle for simplicity
                 rl.DrawRectangle(i32(x * CELL_SIZE), i32(y * CELL_SIZE), CELL_SIZE, CELL_SIZE, rl.YELLOW)
             }
-	    else {
-                // Draw the particle. Here, we're drawing a rectangle for simplicity
-                rl.DrawRectangle(i32(x * CELL_SIZE), i32(y * CELL_SIZE), CELL_SIZE, CELL_SIZE, rl.BLACK)
-	    }
         }
     }
 }
