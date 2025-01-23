@@ -25,6 +25,8 @@ Create water shader
 *Added stone particle type  
 *Added temporary selector buttons  
 *Particles are now added random number inside a radius  
+*Enable single or multi partile adding with right click  
+
 
 
 Implement water particle physics correctly  
